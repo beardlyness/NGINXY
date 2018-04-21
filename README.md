@@ -1,4 +1,8 @@
-# NGINXY
+<h1 align="center">
+  <a href="https://github.com/beardlyness/NGINXY"><img src="https://cdn-1.wp.nginx.com/wp-content/uploads/2018/03/icon-NGINX-OSS.svg" alt="NGINX" width="200"></a>
+ <br />
+  NGINXY
+</h1>
 
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=102)](https://github.com/ellerbrock/open-source-badge/)
 [![Bash Shell](https://badges.frapsoft.com/bash/v1/bash.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
@@ -6,7 +10,7 @@
 [![forthebadge](https://forthebadge.com/images/badges/built-by-neckbeards.svg)](https://forthebadge.com)
 
 
-This script will make it super easy to setup a Reverse Proxy with NGINX.
+<h4 align="center">This script will make it super easy to setup a Reverse Proxy with NGINX.</h4>
 
 # Options
 - Do you wish to setup IPTable rules to harden the security of the host box? (Y/N)<br /> 
