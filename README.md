@@ -6,7 +6,7 @@
 [![forthebadge](https://forthebadge.com/images/badges/built-by-neckbeards.svg)](https://forthebadge.com)
 
 
-This script will make it super easy to setup a Revese Proxy with NGINX.
+This script will make it super easy to setup a Reverse Proxy with NGINX.
 
 # Options
 - Do you wish to setup IPTable rules to harden the security of the host box? (Y/N)<br /> 
