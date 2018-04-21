@@ -9,10 +9,10 @@
 This script will make it super easy to setup a Revese Proxy with NGINX.
 
 # Options
-- Do you wish to setup IPTable rules to harden the security of the host box? (Y/N) 
+- Do you wish to setup IPTable rules to harden the security of the host box? (Y/N)<br /> 
 Sets up IPTable rules to harden the security, and protection of the box it's being installed on.
 
-- Would you like to setup the sysctl.conf to harden the security of the host box? (Y/N)
+- Would you like to setup the sysctl.conf to harden the security of the host box? (Y/N)<br />
 Sets up the sysctl.conf up with strict rules to harden the security, and protection of the box it's being setup on.
 
 
