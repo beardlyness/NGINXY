@@ -4,9 +4,9 @@
   NGINXY
 </h1>
 
-<h4 align="center">This script will make it super easy to setup a Reverse Proxy with NGINX.</h4>
+<p align="center">This script will make it super easy to setup a Reverse Proxy with NGINX.</p>
 
-# Options
+<h3 align="center">Options</h3>
 - Do you wish to setup IPTable rules to harden the security of the host box? (Y/N)<br /> 
 Sets up `IPTable` rules to harden the security, and protection of the box it's being installed on.
 
