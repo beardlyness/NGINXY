@@ -4,11 +4,12 @@
   NGINXY
 </h1>
 
+<div align="center">
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=102)](https://github.com/ellerbrock/open-source-badge/)
 [![Bash Shell](https://badges.frapsoft.com/bash/v1/bash.png?v=103)](https://github.com/ellerbrock/open-source-badges/)
 <br>
 [![forthebadge](https://forthebadge.com/images/badges/built-by-neckbeards.svg)](https://forthebadge.com)
-
+</div>
 
 <h4 align="center">This script will make it super easy to setup a Reverse Proxy with NGINX.</h4>
 
