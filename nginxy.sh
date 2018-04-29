@@ -19,8 +19,8 @@
 # description      :This script will make it super easy to setup a Reverse Proxy with NGINX.
 # author           :The Crypto World Foundation.
 # contributors     :Beardlyness
-# date             :04-22-2018
-# version          :0.0.5 Alpha
+# date             :04-27-2018
+# version          :0.0.6 Alpha
 # os               :Debian
 # usage            :bash nginxy.sh
 # notes            :If you have any problems feel free to email the maintainer: beard [AT] cryptoworld [DOT] is
@@ -39,72 +39,133 @@
     apt-get clean -y
   }
 
-# Grabbing info on active machine.
-    flavor=`lsb_release -cs`
-    system=`lsb_release -i | grep "Distributor ID:" | sed 's/Distributor ID://g' | sed 's/["]//g' | awk '{print tolower($1)}'`
+  # Setting up different NGINX branches to prep for install
+      stable(){
+        echo deb http://nginx.org/packages/$system/ $flavor nginx > /etc/apt/sources.list.d/deb.nginx.org.list
+        echo deb-src http://nginx.org/packages/$system/ $flavor nginx >> /etc/apt/sources.list.d/deb.nginx.org.list
+          wget https://nginx.org/keys/nginx_signing.key
+          apt-key add nginx_signing.key
+      }
+
+      mainline(){
+        echo deb http://nginx.org/packages/mainline/$system/ $flavor nginx > /etc/apt/sources.list.d/deb.nginx.org.list
+        echo deb-src http://nginx.org/packages/mainline/$system/ $flavor nginx >> /etc/apt/sources.list.d/deb.nginx.org.list
+          wget https://nginx.org/keys/nginx_signing.key
+          apt-key add nginx_signing.key
+      }
 
 #START
 
 # Checking for multiple "required" pieces of software.
     if
-      echo -e "\033[92mPerforming upkeep of system packages..\e[0m"
+      echo -e "\033[92mPerforming upkeep of system packages.. \e[0m"
         upkeep
-
       echo -e "\033[92mChecking software list..\e[0m"
 
-    [ ! -x  /usr/bin/lsb_release ] || [ ! -x  /usr/bin/wget ] || [ ! -x  /usr/bin/apt-transport-https ] || [ ! -x  /usr/bin/dirmngr ] || [ ! -x  /usr/bin/ca-certificates ] ; then
+      [ ! -x  /usr/bin/lsb_release ] || [ ! -x  /usr/bin/wget ] || [ ! -x  /usr/bin/apt-transport-https ] || [ ! -x  /usr/bin/dirmngr ] || [ ! -x  /usr/bin/ca-certificates ] || [ ! -x  /usr/bin/dialog ] ; then
 
-      echo -e "\033[92mlsb_release: checking for software..\e[0m"
-      echo -e "\033[34mInstalling lsb_release, Please Wait...\e[0m"
-      apt-get install lsb-release
+        echo -e "\033[92mlsb_release: checking for software..\e[0m"
+        echo -e "\033[34mInstalling lsb_release, Please Wait...\e[0m"
+          apt-get install lsb-release
 
-      echo -e "\033[92mwget: checking for software..\e[0m"
-      echo -e "\033[34mInstalling wget, Please Wait...\e[0m"
-      apt-get install wget
+        echo -e "\033[92mwget: checking for software..\e[0m"
+        echo -e "\033[34mInstalling wget, Please Wait...\e[0m"
+          apt-get install wget
 
-      echo -e "\033[92mapt-transport-https: checking for software..\e[0m"
-      echo -e "\033[34mInstalling apt-transport-https, Please Wait...\e[0m"
-      apt-get install apt-transport-https
+        echo -e "\033[92mapt-transport-https: checking for software..\e[0m"
+        echo -e "\033[34mInstalling apt-transport-https, Please Wait...\e[0m"
+          apt-get install apt-transport-https
 
-      echo -e "\033[92mdirmngr: checking for software..\e[0m"
-      echo -e "\033[34mInstalling dirmngr, Please Wait...\e[0m"
-      apt-get install dirmngr
+        echo -e "\033[92mdirmngr: checking for software..\e[0m"
+        echo -e "\033[34mInstalling dirmngr, Please Wait...\e[0m"
+          apt-get install dirmngr
 
-      echo -e "\033[92mca-certificates: checking for software..\e[0m"
-      echo -e "\033[34mInstalling ca-certificates, Please Wait...\e[0m"
-      apt-get install ca-certificates
-  fi
+        echo -e "\033[92mca-certificates: checking for software..\e[0m"
+        echo -e "\033[34mInstalling ca-certificates, Please Wait...\e[0m"
+          apt-get install ca-certificates
+
+        echo -e "\033[92mdialog: checking for software..\e[0m"
+        echo -e "\033[34mInstalling dialog, Please Wait...\e[0m"
+          apt-get install dialog
+    fi
+
+  # Grabbing info on active machine.
+      flavor=`lsb_release -cs`
+      system=`lsb_release -i | grep "Distributor ID:" | sed 's/Distributor ID://g' | sed 's/["]//g' | awk '{print tolower($1)}'`
 
 # NGINX Arg main
-  read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/N) " REPLY
-    case "${REPLY,,}" in
-      [yY]|[yY][eE][sS])
-          echo deb http://nginx.org/packages/$system/ $flavor nginx > /etc/apt/sources.list.d/deb.nginx.org.list
-          echo deb-src http://nginx.org/packages/$system/ $flavor nginx >> /etc/apt/sources.list.d/deb.nginx.org.list
-            wget -4 https://nginx.org/keys/nginx_signing.key
-            apt-key add nginx_signing.key
-          echo "Performing upkeep.."
-            upkeep
-          echo "Installing NGINX.."
-            apt-get install nginx
-            service nginx status
-          echo "Raising limit of workers.."
-            ulimit -n 65536
-            ulimit -a
-          echo "Setting up Security Limits.."
-            wget -O /etc/security/limits.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/security/limits.conf
-          echo "Setting up background NGINX workers.."
-            wget -O /etc/default/nginx https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/default/nginx
-          echo "Restarting NGINX daemon"
-            service nginx restart
+read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/N) " REPLY
+  case "${REPLY,,}" in
+    [yY]|[yY][eE][sS])
+      HEIGHT=20
+      WIDTH=120
+      CHOICE_HEIGHT=2
+      BACKTITLE="NGINXY"
+      TITLE="NGINX Branch Builds"
+      MENU="Choose one of the following Build options:"
+
+      OPTIONS=(1 "Stable"
+               2 "Mainline")
+
+      CHOICE=$(dialog --clear \
+                      --backtitle "$BACKTITLE" \
+                      --title "$TITLE" \
+                      --menu "$MENU" \
+                      $HEIGHT $WIDTH $CHOICE_HEIGHT \
+                      "${OPTIONS[@]}" \
+                      2>&1 >/dev/tty)
+
+
+# Attached Arg for dialogs $CHOICE output
+    case $CHOICE in
+      1)
+        echo "Grabbing Stable build dependencies.."
+          stable
+        echo "Performing upkeep.."
+          upkeep
+        echo "Installing NGINX.."
+          apt-get install nginx
+          service nginx status
+        echo "Raising limit of workers.."
+          ulimit -n 65536
+          ulimit -a
+        echo "Setting up Security Limits.."
+          wget -O /etc/security/limits.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/security/limits.conf
+        echo "Setting up background NGINX workers.."
+          wget -O /etc/default/nginx https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/default/nginx
+        echo "Restarting NGINX daemon"
+          service nginx restart
           ;;
-        [nN]|[nN][oO])
-          echo "You have said no? We cannot work without your permission!"
-          ;;
-        *)
-          echo "Invalid response. You okay?"
+      2)
+        echo "Grabbing Mainline build dependencies.."
+          mainline
+        echo "Performing upkeep.."
+          upkeep
+        echo "Installing NGINX.."
+          apt-get install nginx
+          service nginx status
+        echo "Raising limit of workers.."
+          ulimit -n 65536
+          ulimit -a
+        echo "Setting up Security Limits.."
+          wget -O /etc/security/limits.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/security/limits.conf
+        echo "Setting up background NGINX workers.."
+          wget -O /etc/default/nginx https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/default/nginx
+        echo "Restarting NGINX daemon"
+          service nginx restart
           ;;
     esac
+clear
+
+# Close Arg for Main Statement.
+      ;;
+    [nN]|[nN][oO])
+      echo "You have said no? We cannot work without your permission!"
+      ;;
+    *)
+      echo "Invalid response. You okay?"
+      ;;
+esac
 
     read -r -p "Do you wish to setup IPTable rules to harden the security of the host box? (Y/N) " REPLY
       case "${REPLY,,}" in
@@ -166,9 +227,6 @@
             echo "### 11: Limit new TCP direct connections ###"
             /sbin/iptables -I INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent --set
             /sbin/iptables -I INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent   --update --seconds 60 --hitcount 50 -j DROP
-
-            echo "Restarting Networking on host box.."
-              service networking restart && service networking status
 
             echo "Showing IPTable rules set on host box.."
               iptables -S
