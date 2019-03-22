@@ -19,8 +19,8 @@
 # description      :This script will make it super easy to setup a Reverse Proxy with NGINX.
 # author           :The Crypto World Foundation.
 # contributors     :beard
-# date             :02-01-2019
-# version          :0.0.7 Alpha
+# date             :03-22-2019
+# version          :0.0.8 Alpha
 # os               :Debian/Ubuntu
 # usage            :bash nginxy.sh
 # notes            :If you have any problems feel free to email the maintainer: beard [AT] cryptoworld [DOT] is
@@ -40,19 +40,34 @@
   }
 
   # Setting up different NGINX branches to prep for install
-      stable(){
+    function stable(){
         echo deb http://nginx.org/packages/$system/ $flavor nginx > /etc/apt/sources.list.d/$flavor.nginx.stable.list
         echo deb-src http://nginx.org/packages/$system/ $flavor nginx >> /etc/apt/sources.list.d/$flavor.nginx.stable.list
           wget https://nginx.org/keys/nginx_signing.key
           apt-key add nginx_signing.key
       }
 
-      mainline(){
+    function mainline(){
         echo deb http://nginx.org/packages/mainline/$system/ $flavor nginx > /etc/apt/sources.list.d/$flavor.nginx.mainline.list
         echo deb-src http://nginx.org/packages/mainline/$system/ $flavor nginx >> /etc/apt/sources.list.d/$flavor.nginx.mainline.list
           wget https://nginx.org/keys/nginx_signing.key
           apt-key add nginx_signing.key
       }
+
+    function nginx_default() {
+      echo "Installing NGINX.."
+        apt-get install nginx
+        service nginx status
+      echo "Raising limit of workers.."
+        ulimit -n 65536
+        ulimit -a
+      echo "Setting up Security Limits.."
+        wget -O /etc/security/limits.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/security/limits.conf
+      echo "Setting up background NGINX workers.."
+        wget -O /etc/default/nginx https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/default/nginx
+      echo "Restarting NGINX daemon"
+        service nginx restart
+    }
 
 #START
 
@@ -123,36 +138,14 @@ read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/N) " REPLY
           stable
         echo "Performing upkeep.."
           upkeep
-        echo "Installing NGINX.."
-          apt-get install nginx
-          service nginx status
-        echo "Raising limit of workers.."
-          ulimit -n 65536
-          ulimit -a
-        echo "Setting up Security Limits.."
-          wget -O /etc/security/limits.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/security/limits.conf
-        echo "Setting up background NGINX workers.."
-          wget -O /etc/default/nginx https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/default/nginx
-        echo "Restarting NGINX daemon"
-          service nginx restart
+          nginx_default
           ;;
       2)
         echo "Grabbing Mainline build dependencies.."
           mainline
         echo "Performing upkeep.."
           upkeep
-        echo "Installing NGINX.."
-          apt-get install nginx
-          service nginx status
-        echo "Raising limit of workers.."
-          ulimit -n 65536
-          ulimit -a
-        echo "Setting up Security Limits.."
-          wget -O /etc/security/limits.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/security/limits.conf
-        echo "Setting up background NGINX workers.."
-          wget -O /etc/default/nginx https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/default/nginx
-        echo "Restarting NGINX daemon"
-          service nginx restart
+          nginx_default
           ;;
     esac
 clear
@@ -167,88 +160,88 @@ clear
       ;;
 esac
 
-      read -r -p "Would you like to setup the sysctl.conf to harden the security of the host box? (Y/N) " REPLY
-        case "${REPLY,,}" in
-          [yY]|[yY][eE][sS])
-              echo "Setting up sysctl.conf rules. Hold tight.."
-                wget -O /etc/sysctl.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/sysctl.conf
-                ;;
-          [nN]|[nN][oO])
-            echo "You have said no? We cannot work without your permission!"
-            ;;
-          *)
+read -r -p "Would you like to setup the sysctl.conf to harden the security of the host box? (Y/N) " REPLY
+  case "${REPLY,,}" in
+    [yY]|[yY][eE][sS])
+        echo "Setting up sysctl.conf rules. Hold tight.."
+          wget -O /etc/sysctl.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/sysctl.conf
+          ;;
+    [nN]|[nN][oO])
+      echo "You have said no? We cannot work without your permission!"
+      ;;
+    *)
+    echo "Invalid response. You okay?"
+    ;;
+  esac
+
+  read -r -p "Do you wish to setup IPTable rules to harden the security of the host box? (Y/N) " REPLY
+    case "${REPLY,,}" in
+      [yY]|[yY][eE][sS])
+          echo "Setting up IPTable rules. Hold tight.."
+
+          echo "### 1: Drop invalid packets ###"
+          /sbin/iptables -t mangle -A PREROUTING -m conntrack --ctstate INVALID -j DROP
+
+          echo "### 2: Drop TCP packets that are new and are not SYN ###"
+          /sbin/iptables -t mangle -A PREROUTING -p tcp ! --syn -m conntrack --ctstate NEW -j DROP
+
+          echo "### 3: Drop SYN packets with suspicious MSS value ###"
+          /sbin/iptables -t mangle -A PREROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -j DROP
+
+          echo "### 4: Block packets with bogus TCP flags ###"
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,RST FIN,RST -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,ACK FIN -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,URG URG -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,FIN FIN -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,PSH PSH -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL ALL -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL NONE -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,FIN,PSH,URG -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+
+          echo "### 5: Block spoofed packets ###"
+          /sbin/iptables -t mangle -A PREROUTING -s 224.0.0.0/3 -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -s 169.254.0.0/16 -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -s 172.16.0.0/12 -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -s 192.0.2.0/24 -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -s 192.168.0.0/16 -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -s 10.0.0.0/8 -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -s 0.0.0.0/8 -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -s 240.0.0.0/5 -j DROP
+          /sbin/iptables -t mangle -A PREROUTING -s 127.0.0.0/8 ! -i lo -j DROP
+
+          echo "### 6: Drop ICMP ###"
+          /sbin/iptables -t mangle -A PREROUTING -p icmp -j DROP
+
+          echo "### 7: Drop fragments in all chains ###"
+          /sbin/iptables -t mangle -A PREROUTING -f -j DROP
+
+          echo "### 8: Limit connections per source IP ###"
+          /sbin/iptables -A INPUT -p tcp -m connlimit --connlimit-above 111 -j REJECT --reject-with tcp-reset
+
+          echo "### 9: Limit RST packets ###"
+          /sbin/iptables -A INPUT -p tcp --tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT
+          /sbin/iptables -A INPUT -p tcp --tcp-flags RST RST -j DROP
+
+          echo "### 10: Limit new TCP connections per second per source IP ###"
+          /sbin/iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT
+          /sbin/iptables -A INPUT -p tcp -m conntrack --ctstate NEW -j DROP
+
+          echo "### 11: Limit new TCP direct connections ###"
+          /sbin/iptables -I INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent --set
+          /sbin/iptables -I INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent   --update --seconds 60 --hitcount 50 -j DROP
+
+          echo "Showing IPTable rules set on host box.."
+            iptables -S
+          ;;
+        [nN]|[nN][oO])
+          echo "You have said no? We cannot work without your permission!"
+          ;;
+        *)
           echo "Invalid response. You okay?"
           ;;
-        esac
-
-        read -r -p "Do you wish to setup IPTable rules to harden the security of the host box? (Y/N) " REPLY
-          case "${REPLY,,}" in
-            [yY]|[yY][eE][sS])
-                echo "Setting up IPTable rules. Hold tight.."
-
-                echo "### 1: Drop invalid packets ###"
-                /sbin/iptables -t mangle -A PREROUTING -m conntrack --ctstate INVALID -j DROP
-
-                echo "### 2: Drop TCP packets that are new and are not SYN ###"
-                /sbin/iptables -t mangle -A PREROUTING -p tcp ! --syn -m conntrack --ctstate NEW -j DROP
-
-                echo "### 3: Drop SYN packets with suspicious MSS value ###"
-                /sbin/iptables -t mangle -A PREROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -j DROP
-
-                echo "### 4: Block packets with bogus TCP flags ###"
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,RST FIN,RST -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,ACK FIN -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,URG URG -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,FIN FIN -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,PSH PSH -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL ALL -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL NONE -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,FIN,PSH,URG -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
-
-                echo "### 5: Block spoofed packets ###"
-                /sbin/iptables -t mangle -A PREROUTING -s 224.0.0.0/3 -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -s 169.254.0.0/16 -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -s 172.16.0.0/12 -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -s 192.0.2.0/24 -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -s 192.168.0.0/16 -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -s 10.0.0.0/8 -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -s 0.0.0.0/8 -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -s 240.0.0.0/5 -j DROP
-                /sbin/iptables -t mangle -A PREROUTING -s 127.0.0.0/8 ! -i lo -j DROP
-
-                echo "### 6: Drop ICMP ###"
-                /sbin/iptables -t mangle -A PREROUTING -p icmp -j DROP
-
-                echo "### 7: Drop fragments in all chains ###"
-                /sbin/iptables -t mangle -A PREROUTING -f -j DROP
-
-                echo "### 8: Limit connections per source IP ###"
-                /sbin/iptables -A INPUT -p tcp -m connlimit --connlimit-above 111 -j REJECT --reject-with tcp-reset
-
-                echo "### 9: Limit RST packets ###"
-                /sbin/iptables -A INPUT -p tcp --tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT
-                /sbin/iptables -A INPUT -p tcp --tcp-flags RST RST -j DROP
-
-                echo "### 10: Limit new TCP connections per second per source IP ###"
-                /sbin/iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT
-                /sbin/iptables -A INPUT -p tcp -m conntrack --ctstate NEW -j DROP
-
-                echo "### 11: Limit new TCP direct connections ###"
-                /sbin/iptables -I INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent --set
-                /sbin/iptables -I INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent   --update --seconds 60 --hitcount 50 -j DROP
-
-                echo "Showing IPTable rules set on host box.."
-                  iptables -S
-                ;;
-              [nN]|[nN][oO])
-                echo "You have said no? We cannot work without your permission!"
-                ;;
-              *)
-                echo "Invalid response. You okay?"
-                ;;
-          esac
+esac
