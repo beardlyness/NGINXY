@@ -19,8 +19,8 @@
 # description      :This script will make it super easy to setup a Reverse Proxy with NGINX.
 # author           :The Crypto World Foundation.
 # contributors     :beard
-# date             :03-22-2019
-# version          :0.0.8 Alpha
+# date             :03-26-2019
+# version          :0.0.9 Alpha
 # os               :Debian/Ubuntu
 # usage            :bash nginxy.sh
 # notes            :If you have any problems feel free to email the maintainer: beard [AT] cryptoworld [DOT] is
@@ -32,12 +32,13 @@
     exit 1
   fi
 
-# Setting up an update/upgrade global function
-  function upkeep() {
-    apt-get update -y
-    apt-get dist-upgrade -y
-    apt-get clean -y
-  }
+  # Setting up an update/upgrade global function
+    function upkeep() {
+      echo "Performing upkeep.."
+        apt-get update -y
+        apt-get dist-upgrade -y
+        apt-get clean -y
+    }
 
   # Setting up different NGINX branches to prep for install
     function stable(){
@@ -54,20 +55,52 @@
           apt-key add nginx_signing.key
       }
 
-    function nginx_default() {
-      echo "Installing NGINX.."
-        apt-get install nginx
-        service nginx status
-      echo "Raising limit of workers.."
-        ulimit -n 65536
-        ulimit -a
-      echo "Setting up Security Limits.."
-        wget -O /etc/security/limits.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/security/limits.conf
-      echo "Setting up background NGINX workers.."
-        wget -O /etc/default/nginx https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/default/nginx
-      echo "Restarting NGINX daemon"
-        service nginx restart
-    }
+      # Attached func for NGINX branch prep.
+        function nginx_default() {
+          echo "Installing NGINX.."
+            apt-get install nginx
+            service nginx status
+          echo "Raising limit of workers.."
+            ulimit -n 65536
+            ulimit -a
+          echo "Setting up Security Limits.."
+            wget -O /etc/security/limits.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/security/limits.conf
+          echo "Setting up background NGINX workers.."
+            wget -O /etc/default/nginx https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/default/nginx
+            echo "Setting up configuration file for NGINX main configuration.."
+              wget -O /etc/nginx/nginx.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/nginx/nginx.conf
+          echo "Setting up configuration file for NGINX Proxy.."
+            wget -O /etc/nginx/conf.d/nginx-proxy.conf https://raw.githubusercontent.com/beardlyness/NGINXY/master/etc/nginx/conf.d/nginx-proxy.conf
+          echo "Setting up folders.."
+            mkdir -p /etc/engine/ssl/live
+            mkdir -p /var/www/html/pub/live
+
+            read -r -p "Domain Name: (Leave { HTTPS:/// | HTTP:// | WWW. } out of the domain) " DOMAIN
+              if [[ "${DOMAIN,,}" ]]
+                then
+                  echo "Changing 'server_name foobar' >> server_name '$DOMAIN' .."
+                    sed -i 's/server_name foobar/server_name '$DOMAIN'/g' /etc/nginx/conf.d/nginx-proxy.conf
+                  echo "Domain Name has been set to: '$DOMAIN' "
+              fi
+        }
+
+        #Prep for SSL setup & install via ACME.SH script | Check it out here: https://github.com/Neilpang/acme.sh
+          function ssldev() {
+                echo "Preparing for SSL install.."
+                  wget -O -  https://raw.githubusercontent.com/Neilpang/acme.sh/master/acme.sh | INSTALLONLINE=1  sh
+                  reset
+                  service nginx stop
+                  openssl dhparam -out /etc/engine/ssl/live/dhparam.pem 2048
+                  bash ~/.acme.sh/acme.sh --issue --standalone -d $DOMAIN -ak 4096 -k 4096 --force
+                  bash ~/.acme.sh/acme.sh --install-cert -d $DOMAIN \
+                    --key-file    /etc/engine/ssl/live/ssl.key \
+                    --fullchain-file    /etc/engine/ssl/live/certificate.cert \
+                    --reloadcmd   "service nginx restart"
+          }
+
+          # Grabbing info on active machine.
+              flavor=`lsb_release -cs`
+              system=`lsb_release -i | grep "Distributor ID:" | sed 's/Distributor ID://g' | sed 's/["]//g' | awk '{print tolower($1)}'`
 
 #START
 
@@ -104,10 +137,6 @@
           apt-get install dialog
     fi
 
-  # Grabbing info on active machine.
-      flavor=`lsb_release -cs`
-      system=`lsb_release -i | grep "Distributor ID:" | sed 's/Distributor ID://g' | sed 's/["]//g' | awk '{print tolower($1)}'`
-
 # NGINX Arg main
 read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/N) " REPLY
   case "${REPLY,,}" in
@@ -136,16 +165,16 @@ read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/N) " REPLY
       1)
         echo "Grabbing Stable build dependencies.."
           stable
-        echo "Performing upkeep.."
           upkeep
           nginx_default
+          ssldev
           ;;
       2)
         echo "Grabbing Mainline build dependencies.."
           mainline
-        echo "Performing upkeep.."
           upkeep
           nginx_default
+          ssldev
           ;;
     esac
 clear
@@ -173,75 +202,3 @@ read -r -p "Would you like to setup the sysctl.conf to harden the security of th
     echo "Invalid response. You okay?"
     ;;
   esac
-
-  read -r -p "Do you wish to setup IPTable rules to harden the security of the host box? (Y/N) " REPLY
-    case "${REPLY,,}" in
-      [yY]|[yY][eE][sS])
-          echo "Setting up IPTable rules. Hold tight.."
-
-          echo "### 1: Drop invalid packets ###"
-          /sbin/iptables -t mangle -A PREROUTING -m conntrack --ctstate INVALID -j DROP
-
-          echo "### 2: Drop TCP packets that are new and are not SYN ###"
-          /sbin/iptables -t mangle -A PREROUTING -p tcp ! --syn -m conntrack --ctstate NEW -j DROP
-
-          echo "### 3: Drop SYN packets with suspicious MSS value ###"
-          /sbin/iptables -t mangle -A PREROUTING -p tcp -m conntrack --ctstate NEW -m tcpmss ! --mss 536:65535 -j DROP
-
-          echo "### 4: Block packets with bogus TCP flags ###"
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,RST FIN,RST -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags FIN,ACK FIN -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,URG URG -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,FIN FIN -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ACK,PSH PSH -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL ALL -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL NONE -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,FIN,PSH,URG -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
-
-          echo "### 5: Block spoofed packets ###"
-          /sbin/iptables -t mangle -A PREROUTING -s 224.0.0.0/3 -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -s 169.254.0.0/16 -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -s 172.16.0.0/12 -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -s 192.0.2.0/24 -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -s 192.168.0.0/16 -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -s 10.0.0.0/8 -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -s 0.0.0.0/8 -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -s 240.0.0.0/5 -j DROP
-          /sbin/iptables -t mangle -A PREROUTING -s 127.0.0.0/8 ! -i lo -j DROP
-
-          echo "### 6: Drop ICMP ###"
-          /sbin/iptables -t mangle -A PREROUTING -p icmp -j DROP
-
-          echo "### 7: Drop fragments in all chains ###"
-          /sbin/iptables -t mangle -A PREROUTING -f -j DROP
-
-          echo "### 8: Limit connections per source IP ###"
-          /sbin/iptables -A INPUT -p tcp -m connlimit --connlimit-above 111 -j REJECT --reject-with tcp-reset
-
-          echo "### 9: Limit RST packets ###"
-          /sbin/iptables -A INPUT -p tcp --tcp-flags RST RST -m limit --limit 2/s --limit-burst 2 -j ACCEPT
-          /sbin/iptables -A INPUT -p tcp --tcp-flags RST RST -j DROP
-
-          echo "### 10: Limit new TCP connections per second per source IP ###"
-          /sbin/iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 20 -j ACCEPT
-          /sbin/iptables -A INPUT -p tcp -m conntrack --ctstate NEW -j DROP
-
-          echo "### 11: Limit new TCP direct connections ###"
-          /sbin/iptables -I INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent --set
-          /sbin/iptables -I INPUT -p tcp --dport 80 -i eth0 -m state --state NEW -m recent   --update --seconds 60 --hitcount 50 -j DROP
-
-          echo "Showing IPTable rules set on host box.."
-            iptables -S
-          ;;
-        [nN]|[nN][oO])
-          echo "You have said no? We cannot work without your permission!"
-          ;;
-        *)
-          echo "Invalid response. You okay?"
-          ;;
-esac
