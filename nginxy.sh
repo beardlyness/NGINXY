@@ -94,6 +94,8 @@
                   echo "Changing 'server Main-A' >> server '$IPA' .."
                     sed -i 's/$backend/'$IPA'/g' /etc/nginx/conf.d/nginx-proxy.conf
                   echo "Backend IP Address has been set to: '$IPA' "
+                else
+                  echo "You have entered an invalid IP Address.."
               fi
         }
 
@@ -116,6 +118,8 @@
                   echo "Changing 'server Main-A' >> server '$IPA' .."
                     sed -i 's/server Main-A/server '$IPA'/g' /etc/nginx/conf.d/nginx-proxy.conf
                   echo "Upstream IP Address has been set to: '$IPA' "
+                else
+                  echo "You have entered an invalid IP Address.."
               fi
 
               read -r -p "Please enter the IP Address for Upstream IP: " IPB
@@ -124,6 +128,8 @@
                     echo "Changing 'server Main-B' >> server '$IPB' .."
                       sed -i 's/server Main-B/server '$IPB'/g' /etc/nginx/conf.d/nginx-proxy.conf
                     echo "Upstream IP Address has been set to: '$IPB' "
+                  else
+                    echo "You have entered an invalid IP Address.."
                 fi
 
                 read -r -p "Please enter the IP Address for Upstream IP: " IPC
@@ -132,6 +138,8 @@
                       echo "Changing 'server Main-C' >> server '$IPC' .."
                         sed -i 's/server Main-C/server '$IPC'/g' /etc/nginx/conf.d/nginx-proxy.conf
                       echo "Upstream IP Address has been set to: '$IPC' "
+                    else
+                      echo "You have entered an invalid IP Address.."
                   fi
 
                   read -r -p "Please enter the IP Address for Upstream IP: " IPD
@@ -140,6 +148,8 @@
                         echo "Changing 'server Main-D' >> server '$IPD' .."
                           sed -i 's/server Main-D/server '$IPD'/g' /etc/nginx/conf.d/nginx-proxy.conf
                         echo "Upstream IP Address has been set to: '$IPD' "
+                      else
+                        echo "You have entered an invalid IP Address.."
                     fi
         }
 
