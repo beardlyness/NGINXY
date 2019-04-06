@@ -19,8 +19,8 @@
 # description      :This script will make it super easy to setup a Reverse Proxy with NGINX.
 # author           :The Crypto World Foundation.
 # contributors     :beard
-# date             :04-02-2019
-# version          :0.0.10 Alpha
+# date             :04-06-2019
+# version          :0.1.0 Beta
 # os               :Debian/Ubuntu
 # usage            :bash nginxy.sh
 # notes            :If you have any problems feel free to email the maintainer: beard [AT] cryptoworld [DOT] is
@@ -41,14 +41,14 @@
     }
 
   # Setting up different NGINX branches to prep for install
-    function stable() {
+    function nginx_stable() {
         echo deb http://nginx.org/packages/$system/ $flavor nginx > /etc/apt/sources.list.d/$flavor.nginx.stable.list
         echo deb-src http://nginx.org/packages/$system/ $flavor nginx >> /etc/apt/sources.list.d/$flavor.nginx.stable.list
           wget https://nginx.org/keys/nginx_signing.key
           apt-key add nginx_signing.key
       }
 
-    function mainline() {
+    function nginx_mainline() {
         echo deb http://nginx.org/packages/mainline/$system/ $flavor nginx > /etc/apt/sources.list.d/$flavor.nginx.mainline.list
         echo deb-src http://nginx.org/packages/mainline/$system/ $flavor nginx >> /etc/apt/sources.list.d/$flavor.nginx.mainline.list
           wget https://nginx.org/keys/nginx_signing.key
@@ -185,6 +185,8 @@
               sed -i 's/#ssl_ecdh_curve/ssl_ecdh_curve/g' /etc/nginx/conf.d/nginx-proxy.conf
             echo "Generating a 4096 DH Param. This may take a while.."
               openssl dhparam -out /etc/engine/ssl/live/dhparam.pem 4096
+            echo "Restarting NGINX Service..."
+              service nginx restart
           }
 
       # Setting up different PHP Version branches to prep for install
@@ -266,7 +268,7 @@ read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/N) " REPLY
     case $CHOICE in
       1)
         echo "Grabbing Stable build dependencies.."
-          stable
+          nginx_stable
           upkeep
           nginx_default
 
@@ -293,7 +295,7 @@ read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/N) " REPLY
           ;;
       2)
         echo "Grabbing Mainline build dependencies.."
-          mainline
+          nginx_mainline
           upkeep
           nginx_default
 
@@ -351,15 +353,14 @@ read -r -p "Would you like to setup the sysctl.conf to harden the security of th
       [yY]|[yY][eE][sS])
         HEIGHT=20
         WIDTH=120
-        CHOICE_HEIGHT=4
-        BACKTITLE="NGINE"
+        CHOICE_HEIGHT=3
+        BACKTITLE="NGINXY"
         TITLE="PHP Branch Builds"
         MENU="Choose one of the following Build options:"
 
-        OPTIONS=(1 "5.6"
-                 2 "7.1"
-                 3 "7.2"
-                 4 "7.3")
+        OPTIONS=(1 "7.1"
+                 2 "7.2"
+                 3 "7.3")
 
         CHOICE=$(dialog --clear \
                         --backtitle "$BACKTITLE" \
@@ -373,20 +374,6 @@ read -r -p "Would you like to setup the sysctl.conf to harden the security of th
   # Attached Arg for dialogs $CHOICE output
       case $CHOICE in
         1)
-          echo "Installing PHP 5.6, and its modules.."
-            phpdev
-            upkeep
-              apt install php5.6 php5.6-fpm php5.6-cli php5.6-common php5.6-curl php5.6-mbstring php5.6-mysql php5.6-xml
-              sed -i 's/listen.owner = www-data/listen.owner = nginx/g' /etc/php/5.6/fpm/pool.d/www.conf
-              sed -i 's/listen.group = www-data/listen.group = nginx/g' /etc/php/5.6/fpm/pool.d/www.conf
-              sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/5.6/fpm/php.ini
-              sed -i 's/phpx.x-fpm.sock/php5.6-fpm.sock/g' /etc/nginx/conf.d/nginx-proxy.conf
-              service php5.6-fpm restart
-              service php5.6-fpm status
-              service nginx restart
-              ps aux | grep -v root | grep php-fpm | cut -d\  -f1 | sort | uniq
-            ;;
-        2)
           echo "Installing PHP 7.1, and its modules.."
             phpdev
             upkeep
@@ -400,7 +387,7 @@ read -r -p "Would you like to setup the sysctl.conf to harden the security of th
               service nginx restart
               ps aux | grep -v root | grep php-fpm | cut -d\  -f1 | sort | uniq
             ;;
-        3)
+        2)
           echo "Installing PHP 7.2, and its modules.."
             phpdev
             upkeep
@@ -414,7 +401,7 @@ read -r -p "Would you like to setup the sysctl.conf to harden the security of th
               service nginx restart
               ps aux | grep -v root | grep php-fpm | cut -d\  -f1 | sort | uniq
             ;;
-        4)
+        3)
           echo "Installing PHP 7.3, and its modules.."
             phpdev
             upkeep
