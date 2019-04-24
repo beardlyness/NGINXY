@@ -19,8 +19,8 @@
 # description      :This script will make it super easy to setup a Reverse Proxy with NGINX.
 # author           :The Crypto World Foundation.
 # contributors     :beard
-# date             :04-08-2019
-# version          :0.1.1 Beta
+# date             :04-24-2019
+# version          :0.1.2 Beta
 # os               :Debian/Ubuntu
 # usage            :bash nginxy.sh
 # notes            :If you have any problems feel free to email the maintainer: beard [AT] cryptoworld [DOT] is
@@ -176,16 +176,16 @@
 
         #Prep for SSL setup & install via ACME.SH script | Check it out here: https://github.com/Neilpang/acme.sh
           function ssldev() {
-                echo "Preparing for SSL install.."
-                  wget -O -  https://raw.githubusercontent.com/Neilpang/acme.sh/master/acme.sh | INSTALLONLINE=1  sh
-                  reset
-                  service nginx stop
-                  openssl dhparam -out /etc/engine/ssl/"$DOMAIN"/dhparam.pem 2048
-                  bash ~/.acme.sh/acme.sh --issue --standalone -d "$DOMAIN" -ak 4096 -k 4096 --force
-                  bash ~/.acme.sh/acme.sh --install-cert -d "$DOMAIN" \
-                    --key-file    /etc/engine/ssl/"$DOMAIN"/ssl.key \
-                    --fullchain-file    /etc/engine/ssl/"$DOMAIN"/certificate.cert \
-                    --reloadcmd   "service nginx restart"
+            echo "Preparing for SSL install.."
+              wget -O -  https://raw.githubusercontent.com/Neilpang/acme.sh/master/acme.sh | INSTALLONLINE=1  sh
+              reset
+              service nginx stop
+              openssl dhparam -out /etc/engine/ssl/"$DOMAIN"/dhparam.pem 2048
+              bash ~/.acme.sh/acme.sh --issue --standalone -d "$DOMAIN" -ak 4096 -k 4096 --force
+              bash ~/.acme.sh/acme.sh --install-cert -d "$DOMAIN" \
+                --key-file    /etc/engine/ssl/"$DOMAIN"/ssl.key \
+                --fullchain-file    /etc/engine/ssl/"$DOMAIN"/certificate.cert \
+                --reloadcmd   "service nginx restart"
           }
 
           #Prep for SSL setup for Qualys rating
@@ -211,41 +211,23 @@
 #START
 
 # Checking for multiple "required" pieces of software.
-    if
-      echo -e "\033[92mPerforming upkeep of system packages.. \e[0m"
-        upkeep
-      echo -e "\033[92mChecking software list..\e[0m"
+    tools=( lsb_release wget curl dialog socat dirmngr apt-transport-https ca-certificates )
+       for e in "${tools[@]}"
+         do
 
-      [ ! -x  /usr/bin/lsb_release ] || [ ! -x  /usr/bin/socat ] || [ ! -x  /usr/bin/wget ] || [ ! -x  /usr/bin/apt-transport-https ] || [ ! -x  /usr/bin/dirmngr ] || [ ! -x  /usr/bin/ca-certificates ] || [ ! -x  /usr/bin/dialog ] ; then
+           etouch() {
+              command -v "$e" >/dev/null 2>&1
+           }
 
-        echo -e "\033[92mlsb_release: checking for software..\e[0m"
-        echo -e "\033[34mInstalling lsb_release, Please Wait...\e[0m"
-          apt-get install lsb-release
-
-        echo -e "\033[92msocat: checking for software..\e[0m"
-        echo -e "\033[34mInstalling socat, Please Wait...\e[0m"
-          apt-get install socat
-
-        echo -e "\033[92mwget: checking for software..\e[0m"
-        echo -e "\033[34mInstalling wget, Please Wait...\e[0m"
-          apt-get install wget
-
-        echo -e "\033[92mapt-transport-https: checking for software..\e[0m"
-        echo -e "\033[34mInstalling apt-transport-https, Please Wait...\e[0m"
-          apt-get install apt-transport-https
-
-        echo -e "\033[92mdirmngr: checking for software..\e[0m"
-        echo -e "\033[34mInstalling dirmngr, Please Wait...\e[0m"
-          apt-get install dirmngr
-
-        echo -e "\033[92mca-certificates: checking for software..\e[0m"
-        echo -e "\033[34mInstalling ca-certificates, Please Wait...\e[0m"
-          apt-get install ca-certificates
-
-        echo -e "\033[92mdialog: checking for software..\e[0m"
-        echo -e "\033[34mInstalling dialog, Please Wait...\e[0m"
-          apt-get install dialog
-    fi
+           if etouch; then
+             echo "Dependency $e is installed.."
+           else
+             echo "Dependency $e is not installed..?"
+             echo "Trying to install $e | HANG ON | "
+              upkeep
+               apt install "$e"
+           fi
+         done
 
     # Grabbing info on active machine.
         flavor=$(lsb_release -cs)
@@ -253,7 +235,7 @@
 
 
 # NGINX Arg main
-read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/N) " REPLY
+read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/Yes | N/No) " REPLY
   case "${REPLY,,}" in
     [yY]|[yY][eE][sS])
       HEIGHT=20
@@ -344,7 +326,7 @@ clear
       ;;
 esac
 
-read -r -p "Would you like to setup the sysctl.conf to harden the security of the host box? (Y/N) " REPLY
+read -r -p "Would you like to setup the sysctl.conf to harden the security of the host box? (Y/Yes | N/No) " REPLY
   case "${REPLY,,}" in
     [yY]|[yY][eE][sS])
         echo "Setting up sysctl.conf rules. Hold tight.."
@@ -359,7 +341,7 @@ read -r -p "Would you like to setup the sysctl.conf to harden the security of th
   esac
 
   # PHP Arg main
-  read -r -p "Do you want to install and setup PHP? (Y/N) " REPLY
+  read -r -p "Do you want to install and setup PHP? (Y/Yes | N/No) " REPLY
     case "${REPLY,,}" in
       [yY]|[yY][eE][sS])
         HEIGHT=20
