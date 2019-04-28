@@ -18,9 +18,9 @@
 # title            :NGINXY
 # description      :This script will make it super easy to setup a Reverse Proxy with NGINX.
 # author           :The Crypto World Foundation.
-# contributors     :beard
-# date             :04-24-2019
-# version          :0.1.2 Beta
+# contributors     :beard, ksaredfx
+# date             :04-28-2019
+# version          :0.1.3 Beta
 # os               :Debian/Ubuntu
 # usage            :bash nginxy.sh
 # notes            :If you have any problems feel free to email the maintainer: beard [AT] cryptoworld [DOT] is
@@ -212,22 +212,18 @@
 
 # Checking for multiple "required" pieces of software.
     tools=( lsb_release wget curl dialog socat dirmngr apt-transport-https ca-certificates )
-       for e in "${tools[@]}"
-         do
+     grab_eware=""
+       for e in "${tools[@]}"; do
+         if command -v "$e" >/dev/null 2>&1; then
+           echo "Dependency $e is installed.."
+         else
+           echo "Dependency $e is not installed..?"
+            upkeep
+            grab_eware="$grab_eware $e"
+         fi
+       done
+      apt-get install $grab_eware
 
-           etouch() {
-              command -v "$e" >/dev/null 2>&1
-           }
-
-           if etouch; then
-             echo "Dependency $e is installed.."
-           else
-             echo "Dependency $e is not installed..?"
-             echo "Trying to install $e | HANG ON | "
-              upkeep
-               apt install "$e"
-           fi
-         done
 
     # Grabbing info on active machine.
         flavor=$(lsb_release -cs)
