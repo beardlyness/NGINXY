@@ -211,7 +211,7 @@
 #START
 
 # Checking for multiple "required" pieces of software.
-    tools=( lsb_release wget curl dialog socat dirmngr apt-transport-https ca-certificates )
+    tools=( lsb-release wget curl dialog socat dirmngr apt-transport-https ca-certificates )
      grab_eware=""
        for e in "${tools[@]}"; do
          if command -v "$e" >/dev/null 2>&1; then
