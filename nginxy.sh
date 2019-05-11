@@ -97,7 +97,7 @@
                   mkdir -p "$P_MOD_DIR"
                   mkdir -p "$P_SSL_DIR"/"$DOMAIN"
                   mkdir -p "$P_WEB_DIR"/"$DOMAIN"/live
-                echo "Grabbing NGINE Includes"
+                echo "Grabbing NGINXY Includes"
                   wget -O "$P_MOD_DIR"/gzip "$P_URL"/"$P_MOD_DIR"/gzip
                   wget -O "$P_MOD_DIR"/cache "$P_URL"/"$P_MOD_DIR"/cache
                   wget -O "$P_MOD_DIR"/php "$P_URL"/"$P_MOD_DIR"/php
@@ -132,7 +132,7 @@
                 echo "Setting up folders.."
                   mkdir -p "$P_SSL_DIR"/"$DOMAIN"
                   mkdir -p "$P_WEB_DIR"/"$DOMAIN"/live
-                echo "Grabbing NGINE Includes"
+                echo "Grabbing NGINXY Includes"
                   wget -O "$P_MOD_DIR"/gzip "$P_URL"/"$P_MOD_DIR"/gzip
                   wget -O "$P_MOD_DIR"/cache "$P_URL"/"$P_MOD_DIR"/cache
                   wget -O "$P_MOD_DIR"/php "$P_URL"/"$P_MOD_DIR"/php
@@ -187,7 +187,7 @@
             wget -O "$P_MOD_DIR"/error_handling "$P_URL"/"$P_MOD_DIR"/error_handling_html
             sed -i 's/domain/'"$DOMAIN"'/g' "$P_MOD_DIR"/error_handling
           echo "Setting up basic website template.."
-            wget https://github.com/beardlyness/NGINXY-Custom-Errors/archive/master.tar.gz -O - | tar -xz -C "$P_WEB_DIR"/"$DOMAIN"/live/  && mv "$P_WEB_DIR"/"$DOMAIN"/live/NGINE-Custom-Errors-master/* "$P_WEB_DIR"/"$DOMAIN"/live/
+            wget https://github.com/beardlyness/NGINXY-Custom-Errors/archive/master.tar.gz -O - | tar -xz -C "$P_WEB_DIR"/"$DOMAIN"/live/  && mv "$P_WEB_DIR"/"$DOMAIN"/live/NGINXY-Custom-Errors-master/* "$P_WEB_DIR"/"$DOMAIN"/live/
             sed -i 's/domain/'"$DOMAIN"'/g'  "$P_WEB_DIR"/"$DOMAIN"/live/index.html
 
           #Setup for e_page touch for HTML Error Pages
@@ -196,7 +196,7 @@
                 sed -i 's/domain/'"$DOMAIN"'/g' "$P_WEB_DIR"/"$DOMAIN"/live/errors/html/"$e_page"
               done
           echo "Removing temporary files/folders.."
-            rm -rf "$P_WEB_DIR"/"$DOMAIN"/live/NGINE-Custom-Errors-master*
+            rm -rf "$P_WEB_DIR"/"$DOMAIN"/live/NGINXY-Custom-Errors-master*
         }
 
         function custom_errors_php() {
@@ -204,7 +204,7 @@
             wget -O "$P_MOD_DIR"/error_handling "$P_URL"/"$P_MOD_DIR"/error_handling_php
             sed -i 's/domain/'"$DOMAIN"'/g' "$P_MOD_DIR"/error_handling
           echo "Setting up basic website template.."
-            wget https://github.com/beardlyness/NGINXY-Custom-Errors/archive/master.tar.gz -O - | tar -xz -C "$P_WEB_DIR"/"$DOMAIN"/live/  && mv "$P_WEB_DIR"/"$DOMAIN"/live/NGINE-Custom-Errors-master/* "$P_WEB_DIR"/"$DOMAIN"/live/
+            wget https://github.com/beardlyness/NGINXY-Custom-Errors/archive/master.tar.gz -O - | tar -xz -C "$P_WEB_DIR"/"$DOMAIN"/live/  && mv "$P_WEB_DIR"/"$DOMAIN"/live/NGINXY-Custom-Errors-master/* "$P_WEB_DIR"/"$DOMAIN"/live/
             sed -i 's/domain/'"$DOMAIN"'/g'  "$P_WEB_DIR"/"$DOMAIN"/live/index.html
 
           #Setup for e_page touch for PHP Error Pages
@@ -213,7 +213,7 @@
                 sed -i 's/domain/'"$DOMAIN"'/g' "$P_WEB_DIR"/"$DOMAIN"/live/errors/php/"$e_page"
               done
           echo "Removing temporary files/folders.."
-            rm -rf "$P_WEB_DIR"/"$DOMAIN"/live/NGINE-Custom-Errors-master*
+            rm -rf "$P_WEB_DIR"/"$DOMAIN"/live/NGINXY-Custom-Errors-master*
         }
 
         #Prep for SSL setup & install via ACME.SH script | Check it out here: https://github.com/Neilpang/acme.sh
@@ -317,7 +317,7 @@ read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/Yes | N/No) " REPL
                           HEIGHT=20
                           WIDTH=120
                           CHOICE_HEIGHT=2
-                          BACKTITLE="NGINE"
+                          BACKTITLE="NGINXY"
                           TITLE="NGINX Custom Error Handling"
                           MENU="Choose one of the following Error Handling options:"
 
@@ -373,7 +373,7 @@ read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/Yes | N/No) " REPL
                           HEIGHT=20
                           WIDTH=120
                           CHOICE_HEIGHT=2
-                          BACKTITLE="NGINE"
+                          BACKTITLE="NGINXY"
                           TITLE="NGINX Custom Error Handling"
                           MENU="Choose one of the following Error Handling options:"
 
@@ -444,7 +444,7 @@ read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/Yes | N/No) " REPL
                           HEIGHT=20
                           WIDTH=120
                           CHOICE_HEIGHT=2
-                          BACKTITLE="NGINE"
+                          BACKTITLE="NGINXY"
                           TITLE="NGINX Custom Error Handling"
                           MENU="Choose one of the following Error Handling options:"
 
@@ -500,7 +500,7 @@ read -r -p "Do you want to setup NGINX as a Reverse Proxy? (Y/Yes | N/No) " REPL
                           HEIGHT=20
                           WIDTH=120
                           CHOICE_HEIGHT=2
-                          BACKTITLE="NGINE"
+                          BACKTITLE="NGINXY"
                           TITLE="NGINX Custom Error Handling"
                           MENU="Choose one of the following Error Handling options:"
 
