@@ -1,0 +1,34 @@
+error_page 401 /php/401.php;
+error_page 403 /php/403.php;
+error_page 404 /php/404.php;
+error_page 405 /php/405.php;
+error_page 406 /php/406.php;
+error_page 407 /php/407.php;
+error_page 408 /php/408.php;
+error_page 414 /php/414.php;
+error_page 415 /php/415.php;
+error_page 500 /php/500.php;
+error_page 502 /php/502.php;
+error_page 504 /php/504.php;
+error_page 505 /php/505.php;
+error_page 508 /php/508.php;
+error_page 599 /php/599.php;
+
+location ^~ /php {
+  internal;
+  root /var/www/html/domain/live/errors;
+fastcgi_pass unix:/run/php/phpx.x-fpm.sock;
+      fastcgi_index index.php;
+
+      # include the fastcgi_param setting
+      include fastcgi_params;
+
+      # SCRIPT_FILENAME parameter is used for PHP FPM determining
+      #  the script name. If it is not set in fastcgi_params file,
+      # i.e. /etc/nginx/fastcgi_params or in the parent contexts,
+      # please comment off following line:
+      fastcgi_param  SCRIPT_FILENAME   $document_root$fastcgi_script_name;
+
+      fastcgi_param REDIRECT_REQUEST_METHOD "GET";
+      fastcgi_param REDIRECT_URL $uri;
+}
