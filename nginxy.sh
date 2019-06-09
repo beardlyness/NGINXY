@@ -81,7 +81,7 @@
         }
 
         function proxy_default()  {
-          read -r -p "Domain Name: (Leave { HTTPS:/// | HTTP:// | WWW. } out of the domain) " DOMAIN
+          read -r -p "Domain Name: (Leave { HTTPS:/// | HTTP:// | FTP:// | SSH:// | TELNET:// | UNIX:// | CHROME:// | MOZILLA:// | BRAVE:// | M. | WWW. } out of the domain) " DOMAIN
             if [[ -n "${DOMAIN,,}" ]]
               then
                 echo "Setting up configuration file for NGINX Proxy.."
