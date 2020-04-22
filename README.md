@@ -1,5 +1,5 @@
 <h1 align="center">
-  <a href="https://github.com/beardlyness/NGINXY"><img src="https://cdn-1.wp.nginx.com/wp-content/uploads/2018/03/icon-NGINX-OSS.svg" alt="NGINX" width="200"></a>
+  <a href="https://github.com/beardlyness/NGINXY"><img src="https://raw.githubusercontent.com/beardlyness/NGINXY-Custom-Errors/master/nginxy.png" alt="NGINX" width="200"></a>
  <br />
   NGINXY
 </h1>
